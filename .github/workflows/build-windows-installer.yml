@@ -1,0 +1,113 @@
+# Build installable MK Studio VPN for Windows
+name: Build Windows Installer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/build-windows-installer.yml"
+      - "windows/**"
+      - "lib/**"
+      - "pubspec.yaml"
+
+jobs:
+  windows-installer:
+    runs-on: windows-latest
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.5"
+          channel: stable
+          cache: true
+
+      - name: Enable Windows desktop
+        run: flutter config --enable-windows-desktop
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) {
+            throw "Inno Setup install failed"
+          }
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Fetch Windows core libs
+        shell: pwsh
+        run: |
+          $ver = "4.1.0"
+          if (Test-Path dependencies.properties) {
+            $line = Get-Content dependencies.properties | Where-Object { $_ -match '^core\.version=' } | Select-Object -First 1
+            if ($line) { $ver = ($line -split '=', 2)[1].Trim() }
+          }
+          New-Item -ItemType Directory -Force -Path hiddify-core\bin | Out-Null
+          $url = "https://github.com/hiddify/hiddify-next-core/releases/download/v$ver/hiddify-lib-windows-amd64.tar.gz"
+          Invoke-WebRequest -Uri $url -OutFile $env:TEMP\hcore-win.tar.gz -UseBasicParsing
+          tar -xzf $env:TEMP\hcore-win.tar.gz -C hiddify-core\bin
+          Get-ChildItem hiddify-core\bin | Select-Object -First 20
+
+      - name: Build Windows release
+        run: flutter build windows --release --target=lib/main_prod.dart
+
+      - name: Package portable zip + Install bat
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path out | Out-Null
+          $rel = "build\windows\x64\runner\Release"
+          $stage = "dist\tmp\MKStudioVPN"
+          Remove-Item -Recurse -Force dist\tmp -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          Copy-Item "$rel\*" $stage -Recurse -Force
+          @"
+          @echo off
+          setlocal
+          set APP=MK Studio VPN
+          set SRC=%~dp0
+          set DEST=%LOCALAPPDATA%\%APP%
+          echo Installing %APP% to %DEST% ...
+          mkdir "%DEST%" 2>nul
+          xcopy /E /I /Y "%SRC%*" "%DEST%\" >nul
+          powershell -NoProfile -Command "$s=(New-Object -ComObject WScript.Shell); $i=$s.CreateShortcut([Environment]::GetFolderPath('Desktop')+'\%APP%.lnk'); $i.TargetPath='%DEST%\MKStudioVPN.exe'; $i.WorkingDirectory='%DEST%'; $i.Save(); $i=$s.CreateShortcut([Environment]::GetFolderPath('StartMenu')+'\Programs\%APP%.lnk'); $i.TargetPath='%DEST%\MKStudioVPN.exe'; $i.WorkingDirectory='%DEST%'; $i.Save()"
+          echo Done.
+          start "" "%DEST%\MKStudioVPN.exe"
+          "@ | Set-Content -Path "$stage\Install-MKStudioVPN.bat" -Encoding ASCII
+          Compress-Archive -Force -Path "$stage\*" -DestinationPath "out\MK-Studio-VPN-Windows-latest.zip"
+          Copy-Item -Force "out\MK-Studio-VPN-Windows-latest.zip" "out\MK-Studio-VPN-Windows-Portable-x64.zip"
+
+      - name: Compile Setup.exe (Inno)
+        shell: pwsh
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "windows\packaging\exe\mkstudio_vpn.iss"
+          if (Test-Path "out\MK-Studio-VPN-Windows-Setup-x64.exe") {
+            Copy-Item -Force "out\MK-Studio-VPN-Windows-Setup-x64.exe" "out\MK-Studio-VPN-Windows-latest.exe"
+          }
+          Get-ChildItem out | Format-Table Name, Length
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MK-Studio-VPN-Windows-Installer
+          path: |
+            out/MK-Studio-VPN-Windows-latest.exe
+            out/MK-Studio-VPN-Windows-Setup-x64.exe
+            out/MK-Studio-VPN-Windows-latest.zip
+            out/MK-Studio-VPN-Windows-Portable-x64.zip
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: windows-latest
+          name: MK Studio VPN Windows
+          prerelease: true
+          files: |
+            out/MK-Studio-VPN-Windows-latest.exe
+            out/MK-Studio-VPN-Windows-latest.zip
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
