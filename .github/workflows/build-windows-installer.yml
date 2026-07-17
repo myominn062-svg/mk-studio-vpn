@@ -39,6 +39,15 @@ jobs:
       - name: Flutter pub get
         run: flutter pub get
 
+      - name: Code generation (slang + build_runner)
+        shell: pwsh
+        run: |
+          dart run slang
+          dart run build_runner build --delete-conflicting-outputs
+          if ($LASTEXITCODE -ne 0) {
+            dart run build_runner build --delete-conflicting-outputs
+          }
+
       - name: Fetch Windows core libs
         shell: pwsh
         run: |
