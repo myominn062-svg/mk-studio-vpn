@@ -1,0 +1,62 @@
+display_name: MK Studio VPN
+package_name: mkstudiovpn
+maintainer:
+  name: MK Studio
+  email: support@myominnoo.org
+
+priority: optional
+section: x11
+installed_size: 6604
+essential: false
+icon: assets/images/source/ic_launcher_border.png
+
+# Post-installation tasks:
+# 1. Inject StartupWMClass into the system .desktop file for correct icon association
+# 2. Remove conflicting desktop files from users' .local directories (cleanup AppImage artifacts)
+# 3. Update the desktop database to apply changes immediately
+postinstall_scripts:
+  - echo "Setting up MK Studio VPN..."
+  - sudo sed -i '/^\[Desktop Entry\]/a StartupWMClass=com.mkstudio.vpn' "/usr/share/applications/mkstudiovpn.desktop"
+  - echo "Search and remove leftover desktop files from .local"
+  - for user_dir in /home/*; do if [ -f "$user_dir/.local/share/applications/mkstudiovpn.desktop" ]; then rm -f "$user_dir/.local/share/applications/mkstudiovpn.desktop"; echo "Found and removed mkstudiovpn.desktop from $user_dir .local"; fi; done
+  - for user_dir in /home/*; do if [ -f "$user_dir/.local/share/applications/hiddify.desktop" ]; then rm -f "$user_dir/.local/share/applications/hiddify.desktop"; echo "Found and removed hiddify.desktop from $user_dir .local"; fi; done
+  - update-desktop-database /usr/share/applications
+  - echo "MK Studio VPN is ready to use :)"
+
+# Post-uninstallation tasks:
+postuninstall_scripts:
+  - echo "Removing MK Studio VPN user data..."
+  - for user_dir in /home/*; do if [ -d "$user_dir/.local/share/mkstudiovpn" ]; then rm -rf "$user_dir/.local/share/mkstudiovpn"; echo "Removed data from $user_dir"; fi; done
+  - for user_dir in /home/*; do if [ -d "$user_dir/.local/share/com.mkstudio.vpn" ]; then rm -rf "$user_dir/.local/share/com.mkstudio.vpn"; echo "Removed data from $user_dir"; fi; done
+  - rm -rf /root/.local/share/mkstudiovpn /root/.local/share/com.mkstudio.vpn
+  - echo "MK Studio VPN data cleanup complete."
+
+keywords:
+  - MK Studio VPN
+  - Proxy
+  - VPN
+  - V2ray
+  - Nekoray
+  - Xray
+  - Psiphon
+  - OpenVPN
+
+generic_name: MK Studio VPN
+
+categories:
+  - Network
+
+startup_notify: true
+# app_links setup for Linux
+# https://github.com/llfbandit/app_links/blob/master/doc/README_linux.md
+supported_mime_type:
+  - x-scheme-handler/mkstudiovpn
+  - x-scheme-handler/hiddify
+  - x-scheme-handler/v2ray
+  - x-scheme-handler/v2rayn
+  - x-scheme-handler/v2rayng
+  - x-scheme-handler/clash
+  - x-scheme-handler/clashmeta
+  - x-scheme-handler/sing-box
+
+metainfo: linux/packaging/com.mkstudio.vpn.appdata.xml

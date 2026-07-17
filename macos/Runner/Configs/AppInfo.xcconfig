@@ -1,0 +1,16 @@
+// Application-level settings for the Runner target — MK Studio VPN (macOS)
+//
+// Fill DEVELOPMENT_TEAM with your Apple Developer Team ID before notarized /
+// Mac App Store / TestFlight-style distribution. Leave blank for local debug.
+
+PRODUCT_NAME = MK Studio VPN
+
+// Keep Swift/XIB module stable (spaces in PRODUCT_NAME would otherwise become MK_Studio_VPN).
+PRODUCT_MODULE_NAME = Runner
+
+PRODUCT_BUNDLE_IDENTIFIER = com.mkstudio.vpn
+
+PRODUCT_COPYRIGHT = Copyright © 2026 MK Studio. All rights reserved.
+
+// Apple Developer Team ID (10 chars). Example: ABCDE12345
+DEVELOPMENT_TEAM =

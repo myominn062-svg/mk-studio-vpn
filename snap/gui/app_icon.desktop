@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=MK Studio VPN
+Comment=MK Studio VPN for Linux
+Exec=mkstudiovpn
+Icon=mkstudiovpn.png
+Terminal=false
+Type=Application
+Categories=Network;

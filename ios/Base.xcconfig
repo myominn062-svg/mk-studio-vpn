@@ -1,0 +1,13 @@
+//
+//  Base.xcconfig
+//  Runner — MK Studio VPN (iOS)
+//
+//  Fill DEVELOPMENT_TEAM with your Apple Developer Team ID before device/TestFlight builds.
+//  Leave blank for source-only / simulator prep without a paid account.
+//
+
+BASE_BUNDLE_IDENTIFIER=com.mkstudio.vpn
+// Flutter method/event channel prefix — must match MkStudioIdentifiers / Android
+SERVICE_IDENTIFIER=com.mkstudio.vpn
+// Apple Developer Team ID (10 chars). Example: ABCDE12345
+DEVELOPMENT_TEAM=

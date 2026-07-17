@@ -1,0 +1,30 @@
+display_name: MK Studio VPN
+
+icon: ../../assets/images/logo.png
+
+keywords:
+  - MK Studio VPN
+  - Proxy
+  - VPN
+  - V2ray
+  - Xray
+  - Sing-box
+
+generic_name: MK Studio VPN
+
+actions:
+  - name: Start
+    label: start
+    arguments:
+      - --start
+  - name: Stop
+    label: stop
+    arguments:
+      - --stop
+
+categories:
+  - Internet
+
+startup_notify: true
+
+include: []

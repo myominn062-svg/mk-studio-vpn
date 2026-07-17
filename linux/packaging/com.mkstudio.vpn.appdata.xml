@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  MK Studio VPN AppStream Metadata
+  Place this file at: linux/packaging/com.mkstudio.vpn.appdata.xml
+-->
+<component type="desktop-application">
+  <id>com.mkstudio.vpn</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+
+  <name>MK Studio VPN</name>
+  <summary>Modern Proxy and VPN Manager for Linux</summary>
+
+  <developer_name>MK Studio</developer_name>
+  <update_contact>support@myominnoo.org</update_contact>
+
+  <description>
+    <p>
+      MK Studio VPN is an advanced proxy and VPN client built for privacy and control.
+      It supports multiple backend protocols including V2Ray, Xray, Clash, and Sing-box,
+      providing flexibility and performance for all kinds of network configurations.
+    </p>
+    <p>
+      Designed with simplicity in mind, MK Studio VPN helps users connect securely and
+      manage complex proxy configurations through a clean graphical interface.
+    </p>
+  </description>
+
+  <screenshots>
+    <screenshot type="default">
+      <image>https://myominnoo.org/assets/logo.png</image>
+      <caption>Main Interface of MK Studio VPN</caption>
+    </screenshot>
+  </screenshots>
+
+  <launchable type="desktop-id">mkstudiovpn.desktop</launchable>
+
+  <icon type="stock">mkstudiovpn</icon>
+
+  <categories>
+    <category>Network</category>
+  </categories>
+
+  <keywords>
+    <keyword>MK Studio VPN</keyword>
+    <keyword>Proxy</keyword>
+    <keyword>VPN</keyword>
+    <keyword>V2Ray</keyword>
+    <keyword>Nekoray</keyword>
+    <keyword>Xray</keyword>
+    <keyword>Psiphon</keyword>
+    <keyword>OpenVPN</keyword>
+  </keywords>
+
+  <mime-types>
+    <mime-type>x-scheme-handler/mkstudiovpn</mime-type>
+    <mime-type>x-scheme-handler/hiddify</mime-type>
+    <mime-type>x-scheme-handler/v2ray</mime-type>
+    <mime-type>x-scheme-handler/v2rayn</mime-type>
+    <mime-type>x-scheme-handler/v2rayng</mime-type>
+    <mime-type>x-scheme-handler/clash</mime-type>
+    <mime-type>x-scheme-handler/clashmeta</mime-type>
+    <mime-type>x-scheme-handler/sing-box</mime-type>
+  </mime-types>
+
+  <url type="homepage">https://myominnoo.org</url>
+  <url type="bugtracker">https://t.me/mkstudio3</url>
+  <url type="help">https://myominnoo.org</url>
+
+  <provides>
+    <binary>mkstudiovpn</binary>
+  </provides>
+
+  <releases>
+    <release version="4.1.7" date="2026-07-17">
+      <description>
+        <p>MK Studio VPN Linux desktop release with multi-protocol support and modern UI.</p>
+      </description>
+    </release>
+  </releases>
+
+  <translation type="gettext">mkstudiovpn</translation>
+
+  <custom>
+    <value key="PackageName">mkstudiovpn</value>
+    <value key="Priority">optional</value>
+    <value key="Section">x11</value>
+    <value key="InstalledSize">6604</value>
+    <value key="Essential">false</value>
+  </custom>
+</component>

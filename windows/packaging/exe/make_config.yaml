@@ -1,0 +1,16 @@
+app_id: 8F2A91C4-6B3E-4D17-9A08-E5C7D4B2F1A0
+publisher: MK Studio
+publisher_url: https://myominnoo.org
+display_name: MK Studio VPN
+create_desktop_icon: true
+install_dir_name: "{autopf64}\\MK Studio VPN"
+setup_icon_file: windows\runner\resources\app_icon.ico
+locales:
+  - ar
+  - en
+  - es
+  - fr
+  - pt
+  - ru
+  - tr
+script_template: inno_setup.sas
