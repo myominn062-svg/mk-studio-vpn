@@ -18,7 +18,7 @@ Forked from [Hiddify App](https://github.com/hiddify/hiddify-app) and rebranded 
 | Platform | Link |
 |---|---|
 | **Android APK** | https://myominnoo.org/downloads/MK-Studio-VPN-latest.apk |
-| **Windows** | https://myominnoo.org/downloads/MK-Studio-VPN-Windows-latest.exe *(installer — when published)* |
+| **Windows** | https://myominnoo.org/downloads/MK-Studio-VPN-Windows-latest.exe |
 | **Linux** | https://myominnoo.org/downloads/MK-Studio-VPN-Linux-latest.tar.gz |
 
 GitHub: https://github.com/myominn062-svg/mk-studio-vpn
