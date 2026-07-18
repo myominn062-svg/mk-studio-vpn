@@ -15,16 +15,24 @@ Apple-specific signing / TestFlight details: see **[IOS-MAC-SETUP.md](IOS-MAC-SE
 
 ---
 
-## Why Windows cannot be built on this Mac / Linux VPS
+## Download (install on Windows PC)
 
-Flutter **Windows** targets require:
+**Installer (recommended):**  
+https://myominnoo.org/downloads/MK-Studio-VPN-Windows-latest.exe  
 
-- Windows 10/11 x64
-- Visual Studio 2022 with **Desktop development with C++**
-- Flutter stable matching `pubspec.yaml` (`>=3.32.0`)
-- Inno Setup (for `.exe` installer) and optionally MSIX tooling
+Double-click → Install → Start Menu / Desktop → **MK Studio VPN**.
 
-The build Mac and VPS `172.255.209.244` are **not Windows**, so they cannot produce `MKStudioVPN.exe`. Source + packaging configs are ready; build on a Windows machine (or a Windows CI runner / VM).
+| File | URL |
+|---|---|
+| Setup.exe | https://myominnoo.org/downloads/MK-Studio-VPN-Windows-latest.exe |
+| Setup (versioned) | https://myominnoo.org/downloads/MK-Studio-VPN-Windows-Setup-x64.exe |
+| Portable zip | https://myominnoo.org/downloads/MK-Studio-VPN-Windows-latest.zip |
+
+Built via GitHub Actions (`windows-latest` + Inno Setup) from https://github.com/myominn062-svg/mk-studio-vpn
+
+## Why local Mac / Linux VPS cannot build Windows
+
+Flutter **Windows** targets require Windows 10/11 + Visual Studio C++. This Mac and the Linux VPS cannot produce `MKStudioVPN.exe` locally — CI builds it.
 
 ---
 

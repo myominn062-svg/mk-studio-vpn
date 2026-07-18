@@ -115,7 +115,9 @@ jobs:
             out/MK-Studio-VPN-Windows-Portable-x64.zip
           if-no-files-found: error
 
+      # Optional GitHub Release (needs contents:write). Artifacts are enough for download hosting.
       - name: Upload to Release
+        if: false
         uses: softprops/action-gh-release@v2
         with:
           tag_name: windows-latest
