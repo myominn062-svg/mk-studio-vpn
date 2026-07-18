@@ -1,0 +1,132 @@
+# Build unsigned MK Studio VPN for macOS (.app zip)
+name: Build macOS
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/build-macos.yml"
+      - "macos/**"
+      - "lib/**"
+      - "pubspec.yaml"
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.5"
+          channel: stable
+          cache: true
+
+      - name: Enable macOS desktop
+        run: flutter config --enable-macos-desktop
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Code generation (slang + build_runner)
+        run: |
+          dart run slang
+          dart run build_runner build --delete-conflicting-outputs || \
+            dart run build_runner build --delete-conflicting-outputs
+
+      - name: Fetch macOS core libs
+        run: |
+          VER="4.1.0"
+          if [ -f dependencies.properties ]; then
+            LINE=$(grep -E '^core\.version=' dependencies.properties | head -1 || true)
+            if [ -n "$LINE" ]; then
+              VER="${LINE#core.version=}"
+              VER=$(echo "$VER" | tr -d '[:space:]')
+            fi
+          fi
+          mkdir -p hiddify-core/bin
+          URL="https://github.com/hiddify/hiddify-next-core/releases/download/v${VER}/hiddify-lib-macos.tar.gz"
+          echo "Fetching $URL"
+          curl -fsSL "$URL" | tar xz -C hiddify-core/bin
+          ls -la hiddify-core/bin | head -20
+
+      - name: Disable automatic code signing for CI
+        run: |
+          {
+            echo 'CODE_SIGN_IDENTITY='
+            echo 'CODE_SIGNING_REQUIRED=NO'
+            echo 'CODE_SIGNING_ALLOWED=NO'
+            echo 'DEVELOPMENT_TEAM='
+          } >> macos/Runner/Configs/AppInfo.xcconfig
+          # Also force Manual style so Xcode does not wait on keychain
+          sed -i '' \
+            -e 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' \
+            macos/Runner.xcodeproj/project.pbxproj
+
+      - name: Build macOS release (unsigned)
+        run: |
+          set -euo pipefail
+          # Prefer Flutter's build path; fall back to explicit xcodebuild if signing hangs/fails.
+          if ! flutter build macos --release --target=lib/main_prod.dart; then
+            echo "flutter build macos failed; retrying via xcodebuild unsigned..."
+            flutter build macos --release --config-only --target=lib/main_prod.dart
+            xcodebuild \
+              -workspace macos/Runner.xcworkspace \
+              -scheme Runner \
+              -configuration Release \
+              -derivedDataPath build/macos_ci \
+              CODE_SIGN_IDENTITY="-" \
+              CODE_SIGN_STYLE=Manual \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGNING_ALLOWED=NO \
+              DEVELOPMENT_TEAM= \
+              PROVISIONING_PROFILE_SPECIFIER= \
+              build
+          fi
+          APP=""
+          for candidate in \
+            "build/macos/Build/Products/Release/MK Studio VPN.app" \
+            "build/macos_ci/Build/Products/Release/MK Studio VPN.app"; do
+            if [ -d "$candidate" ]; then
+              APP="$candidate"
+              break
+            fi
+          done
+          if [ -z "$APP" ]; then
+            echo "Looking for .app under build/"
+            find build -name "*.app" -type d | head -40 || true
+            exit 1
+          fi
+          echo "Built app at: $APP"
+          echo "APP_PATH=$APP" >> "$GITHUB_ENV"
+
+      - name: Package zip
+        run: |
+          mkdir -p out
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "out/MK-Studio-VPN-macOS-latest.zip"
+          ls -lh out/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MK-Studio-VPN-macOS
+          path: out/MK-Studio-VPN-macOS-latest.zip
+          if-no-files-found: error
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: macos-latest
+          name: MK Studio VPN macOS
+          prerelease: true
+          body: |
+            Unsigned macOS build of MK Studio VPN.
+            Gatekeeper may warn on first open (right-click → Open).
+            Apple Developer signing/notarization is required for distribution without warnings.
+          files: out/MK-Studio-VPN-macOS-latest.zip
+          fail_on_unmatched_files: false

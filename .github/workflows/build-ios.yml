@@ -1,0 +1,113 @@
+# Build unsigned MK Studio VPN for iOS (best-effort IPA)
+#
+# IMPORTANT: This produces an UNSIGNED .ipa. It cannot be installed on a real
+# iPhone/iPad via normal means. Installable builds require an Apple Developer
+# Program membership ($99/year), code signing certificates, provisioning
+# profiles, and typically TestFlight or Ad Hoc / Enterprise distribution.
+# Sideloading tools may work for development only and are unsupported here.
+name: Build iOS
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/build-ios.yml"
+      - "ios/**"
+      - "lib/**"
+      - "pubspec.yaml"
+
+permissions:
+  contents: write
+
+jobs:
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.5"
+          channel: stable
+          cache: true
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Code generation (slang + build_runner)
+        run: |
+          dart run slang
+          dart run build_runner build --delete-conflicting-outputs || \
+            dart run build_runner build --delete-conflicting-outputs
+
+      - name: Fetch iOS core libs
+        run: |
+          VER="4.1.0"
+          if [ -f dependencies.properties ]; then
+            LINE=$(grep -E '^core\.version=' dependencies.properties | head -1 || true)
+            if [ -n "$LINE" ]; then
+              VER="${LINE#core.version=}"
+              VER=$(echo "$VER" | tr -d '[:space:]')
+            fi
+          fi
+          mkdir -p ios/Frameworks
+          rm -rf ios/Frameworks/HiddifyCore.xcframework
+          URL="https://github.com/hiddify/hiddify-next-core/releases/download/v${VER}/hiddify-lib-ios.tar.gz"
+          echo "Fetching $URL"
+          curl -fsSL "$URL" | tar xz -C ios/Frameworks
+          ls -la ios/Frameworks | head -20
+          test -d ios/Frameworks/HiddifyCore.xcframework
+
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install --repo-update
+
+      - name: Build iOS release (no codesign)
+        run: |
+          flutter build ios --release --no-codesign --target=lib/main_prod.dart
+
+      - name: Create unsigned IPA
+        run: |
+          set -euo pipefail
+          APP="build/ios/iphoneos/Runner.app"
+          if [ ! -d "$APP" ]; then
+            echo "Runner.app not found; searching..."
+            find build/ios -name "*.app" -type d | head -40
+            exit 1
+          fi
+          mkdir -p out Payload
+          cp -R "$APP" Payload/
+          # zip contents of Payload/ as .ipa (standard IPA layout)
+          (cd . && zip -qr "out/MK-Studio-VPN-iOS-unsigned.ipa" Payload)
+          rm -rf Payload
+          ls -lh out/
+          echo "::notice::Unsigned IPA created. Requires Apple Developer signing to install on devices."
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MK-Studio-VPN-iOS-unsigned
+          path: out/MK-Studio-VPN-iOS-unsigned.ipa
+          if-no-files-found: error
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ios-unsigned-latest
+          name: MK Studio VPN iOS (unsigned)
+          prerelease: true
+          body: |
+            **Unsigned iOS build — not installable without signing.**
+
+            This IPA was built with `--no-codesign`. You cannot install it on a
+            physical iPhone/iPad through the App Store, TestFlight, or Finder
+            without an Apple Developer Program account ($99/year), certificates,
+            and provisioning profiles.
+
+            For distribution you need: Apple Developer membership → signing →
+            TestFlight / Ad Hoc / App Store.
+          files: out/MK-Studio-VPN-iOS-unsigned.ipa
+          fail_on_unmatched_files: false
