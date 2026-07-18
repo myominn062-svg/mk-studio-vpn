@@ -1,4 +1,4 @@
-# Build installable MK Studio VPN for Windows
+# Build installable MK Studio VPN for Windows (Setup.exe + portable zip)
 name: Build Windows Installer
 
 on:
@@ -10,6 +10,7 @@ on:
       - "windows/**"
       - "lib/**"
       - "pubspec.yaml"
+      - "scripts/**"
 
 jobs:
   windows-installer:
@@ -70,6 +71,10 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path out | Out-Null
           $rel = "build\windows\x64\runner\Release"
+          if (-not (Test-Path "$rel\MKStudioVPN.exe")) {
+            Get-ChildItem $rel -Filter "*.exe"
+            throw "MKStudioVPN.exe missing in $rel"
+          }
           $stage = "dist\tmp\MKStudioVPN"
           Remove-Item -Recurse -Force dist\tmp -ErrorAction SilentlyContinue
           New-Item -ItemType Directory -Force -Path $stage | Out-Null
@@ -94,9 +99,10 @@ jobs:
         shell: pwsh
         run: |
           & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "windows\packaging\exe\mkstudio_vpn.iss"
-          if (Test-Path "out\MK-Studio-VPN-Windows-Setup-x64.exe") {
-            Copy-Item -Force "out\MK-Studio-VPN-Windows-Setup-x64.exe" "out\MK-Studio-VPN-Windows-latest.exe"
+          if (-not (Test-Path "out\MK-Studio-VPN-Windows-Setup-x64.exe")) {
+            throw "Setup.exe was not produced"
           }
+          Copy-Item -Force "out\MK-Studio-VPN-Windows-Setup-x64.exe" "out\MK-Studio-VPN-Windows-latest.exe"
           Get-ChildItem out | Format-Table Name, Length
 
       - uses: actions/upload-artifact@v4
@@ -107,6 +113,7 @@ jobs:
             out/MK-Studio-VPN-Windows-Setup-x64.exe
             out/MK-Studio-VPN-Windows-latest.zip
             out/MK-Studio-VPN-Windows-Portable-x64.zip
+          if-no-files-found: error
 
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
@@ -118,5 +125,3 @@ jobs:
             out/MK-Studio-VPN-Windows-latest.exe
             out/MK-Studio-VPN-Windows-latest.zip
           fail_on_unmatched_files: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

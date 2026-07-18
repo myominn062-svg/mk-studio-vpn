@@ -7,10 +7,10 @@
 #define MyAppPublisher "MK Studio"
 #define MyAppURL "https://myominnoo.org"
 #define MyAppExeName "MKStudioVPN.exe"
-#define MyAppId "8F2A91C4-6B3E-4D17-9A08-E5C7D4B2F1A0"
 
 [Setup]
-AppId={{#MyAppId}}
+; Double braces required so Inno treats the GUID as a literal AppId, not a constant.
+AppId={{8F2A91C4-6B3E-4D17-9A08-E5C7D4B2F1A0}}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
