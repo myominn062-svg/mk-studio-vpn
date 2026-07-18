@@ -105,4 +105,3 @@ android/app/libs/
 *.dmg
 .idea/
 *.iml
-.github/workflows/

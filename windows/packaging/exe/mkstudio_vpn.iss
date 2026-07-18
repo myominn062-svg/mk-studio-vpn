@@ -10,7 +10,7 @@
 #define MyAppId "8F2A91C4-6B3E-4D17-9A08-E5C7D4B2F1A0"
 
 [Setup]
-AppId={{{#MyAppId}}
+AppId={{#MyAppId}}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}

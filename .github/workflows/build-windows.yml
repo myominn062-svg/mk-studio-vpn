@@ -1,0 +1,107 @@
+# Build installable MK Studio VPN for Windows (Setup.exe + portable zip)
+name: Build Windows Installer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "windows/**"
+      - "lib/**"
+      - "pubspec.yaml"
+      - ".github/workflows/build-windows.yml"
+
+jobs:
+  windows-installer:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.5"
+          channel: stable
+          cache: true
+
+      - name: Enable Windows desktop
+        run: flutter config --enable-windows-desktop
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Fetch Windows VPN core libs
+        run: |
+          $ver = "4.1.0"
+          if (Test-Path dependencies.properties) {
+            $line = Get-Content dependencies.properties | Where-Object { $_ -match '^core\.version=' } | Select-Object -First 1
+            if ($line) { $ver = ($line -split '=', 2)[1].Trim() }
+          }
+          New-Item -ItemType Directory -Force -Path hiddify-core\bin | Out-Null
+          $url = "https://github.com/hiddify/hiddify-next-core/releases/download/v$ver/hiddify-lib-windows-amd64.tar.gz"
+          Write-Host "Downloading $url"
+          Invoke-WebRequest -Uri $url -OutFile "$env:TEMP\hcore-win.tar.gz" -UseBasicParsing
+          tar -xzf "$env:TEMP\hcore-win.tar.gz" -C hiddify-core\bin
+          Get-ChildItem hiddify-core\bin | Select-Object -First 20
+
+      - name: Build Windows release
+        run: flutter build windows --release --target=lib/main_prod.dart
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Package Setup.exe + portable zip
+        run: |
+          $ErrorActionPreference = "Stop"
+          New-Item -ItemType Directory -Force -Path out | Out-Null
+          $rel = "build\windows\x64\runner\Release"
+          if (-not (Test-Path $rel)) { throw "Missing release folder: $rel" }
+          $exe = Get-ChildItem $rel -Filter "*.exe" | Select-Object -First 1
+          Write-Host "Built exe: $($exe.FullName)"
+
+          # Portable zip with one-click Install bat
+          $stage = "dist\portable\MKStudioVPN"
+          Remove-Item -Recurse -Force dist\portable -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          Copy-Item -Path "$rel\*" -Destination $stage -Recurse -Force
+          $bat = @"
+          @echo off
+          setlocal
+          set APP=MK Studio VPN
+          set SRC=%~dp0
+          set DEST=%LOCALAPPDATA%\%APP%
+          echo Installing %APP% to %DEST% ...
+          mkdir "%DEST%" 2>nul
+          xcopy /E /I /Y "%SRC%*" "%DEST%\" >nul
+          powershell -NoProfile -Command "$s=(New-Object -ComObject WScript.Shell); $i=$s.CreateShortcut([Environment]::GetFolderPath('Desktop')+'\%APP%.lnk'); $i.TargetPath='%DEST%\MKStudioVPN.exe'; $i.WorkingDirectory='%DEST%'; $i.Save(); $i=$s.CreateShortcut([Environment]::GetFolderPath('StartMenu')+'\Programs\%APP%.lnk'); $i.TargetPath='%DEST%\MKStudioVPN.exe'; $i.WorkingDirectory='%DEST%'; $i.Save()"
+          echo Done.
+          start "" "%DEST%\MKStudioVPN.exe"
+          "@
+          Set-Content -Path "$stage\Install-MKStudioVPN.bat" -Value $bat -Encoding ASCII
+          Compress-Archive -Force -Path "$stage\*" -DestinationPath "out\MK-Studio-VPN-Windows-Portable-x64.zip"
+          Copy-Item -Force "out\MK-Studio-VPN-Windows-Portable-x64.zip" "out\MK-Studio-VPN-Windows-latest.zip"
+
+          # Inno Setup installer
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { $iscc = "${env:ProgramFiles}\Inno Setup 6\ISCC.exe" }
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe not found after choco install" }
+          & $iscc "windows\packaging\exe\mkstudio_vpn.iss"
+          if (-not (Test-Path "out\MK-Studio-VPN-Windows-Setup-x64.exe")) {
+            throw "Inno Setup did not produce Setup exe"
+          }
+          Copy-Item -Force "out\MK-Studio-VPN-Windows-Setup-x64.exe" "out\MK-Studio-VPN-Windows-latest.exe"
+          Get-ChildItem out | Format-Table Name, Length
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MK-Studio-VPN-Windows
+          path: |
+            out/MK-Studio-VPN-Windows-latest.exe
+            out/MK-Studio-VPN-Windows-Setup-x64.exe
+            out/MK-Studio-VPN-Windows-Portable-x64.zip
+            out/MK-Studio-VPN-Windows-latest.zip
+          if-no-files-found: error
