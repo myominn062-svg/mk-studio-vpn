@@ -19,9 +19,13 @@ Forked from [Hiddify App](https://github.com/hiddify/hiddify-app) and rebranded 
 |---|---|
 | **Android APK** | https://myominnoo.org/downloads/MK-Studio-VPN-latest.apk |
 | **Windows** | https://myominnoo.org/downloads/MK-Studio-VPN-Windows-latest.exe |
+| **macOS** | https://myominnoo.org/downloads/MK-Studio-VPN-macOS-latest.zip |
+| **iOS (unsigned)** | https://myominnoo.org/downloads/MK-Studio-VPN-iOS-unsigned.ipa |
 | **Linux** | https://myominnoo.org/downloads/MK-Studio-VPN-Linux-latest.tar.gz |
 
 GitHub: https://github.com/myominn062-svg/mk-studio-vpn
+
+> **iOS note:** The IPA is **unsigned** — it cannot install on a real iPhone without Apple Developer ($99/year) + signing / TestFlight. See [IOS-MAC-SETUP.md](IOS-MAC-SETUP.md).
 
 ## Features
 
